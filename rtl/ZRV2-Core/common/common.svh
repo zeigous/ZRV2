@@ -25,6 +25,10 @@ typedef struct packed {
     logic valid;
 } iCacheRequest;
 
+typedef struct packed {
+    logic [31:0] value;
+    logic valid;
+} iCachePacket;
 
 ///////////////
 // Decode 
@@ -115,8 +119,7 @@ typedef struct packed {
     OpClass opClass;
     OpFunc func;
     logic hasDest;
-    logic useImmForRs2;
-    logic usePcForRs1;
+    logic useImmForRs2; // lsq is different RS format, only used for alu imm atm
 } DecodeControlSignals;
 
 typedef struct packed {
@@ -130,3 +133,15 @@ typedef struct packed {
     logic immIsBranchDestination;
     DecodeControlSignals controlSignals;
 } DecodeOut;
+
+typedef struct packed {
+    logic [31:0] pc;
+    logic [4:0] archRs1;
+    logic [4:0] archRs2;
+    logic [4:0] archRd;
+    logic [31:0] imm;
+    logic rdIsPredetermined; // imm is prederermined rd
+    logic rdIsNextPc;
+    logic immIsBranchDestination;
+    DecodeControlSignals controlSignals;
+} DecodeFuncOut;

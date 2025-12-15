@@ -11,11 +11,16 @@ module Decode(
 
     // input from Fetch & i-cache   
     input FetchOut fetchInput,
-    input iCacheRequest cacheInput,
+    input iCachePacket cacheInput,
+
+    // flush to fetch
+    output Flush flushOut,
 
     // output to rename & issue
     DecodeOut out
 );
+
+    DecodeFuncOut decodeFuncOut = decode(cacheInput.value, fetchInput.pc);
 
     always_ff @(posedge clk) begin
         if (clkEn) begin
@@ -23,23 +28,32 @@ module Decode(
                 out <= '0;
             end else begin
                 if (!cacheInput.valid || flush.en) begin
-
+                    out <= '0;
                 end else if (!stall) begin
-
+                    // deal with wrong branches
+                    if ((decodeFuncOut.controlSignals.opClass == JAL) 
+                        && (!fetchInput.branch || (fetchInput.branch && !fetchInput.unconditional))) begin
+                        flushOut.en = '1;
+                        flushOut.branch = '1;
+                        flushOut.branchPc = fetchInput.pc;
+                        flushOut.unconditional = '1;
+                        flushOut.address = decodeFuncOut.imm;
+                    end
                 end
             end
         end
     end
     
-    function DecodeOut decode(input logic [31:0] instruction, input logic [31:0] pc);
+    function DecodeFuncOut decode(input logic [31:0] instruction, input logic [31:0] pc);
         OpDecodeType opcode = OpDecodeType'(instruction[6:0]);
-        DecodeOut out = '0;
+        DecodeFuncOut out = '0;
 
         // defaults for out
         out = 0;
         out.pc = pc;
 
         // decode
+        // TODO: ADD FENCE/FENCE.I HANDLING 
         case (opcode) 
             I_EBRK_CAL : begin
                 out.controlSignals.opClass = NOP;
@@ -94,6 +108,7 @@ module Decode(
                 out.immIsBranchDestination = '1;
                 out.controlSignals.opClass = JAL;
             end
+
             I_BRANCH : begin
                 // registers & immediates
                 out.archRs1 = instruction[19:15];
@@ -104,6 +119,64 @@ module Decode(
                 out.immIsBranchDestination = '1;
                 out.controlSignals.opClass = BRANCH;
                 out.controlSignals.func = remapFunc(out.controlSignals.opClass, 7'h0, instruction[14:12]);
+            end
+
+            I_STORE : begin
+                // registers & immediates
+                out.archRs1 = instruction[19:15];
+                out.archRs2 = instruction[24:20];
+                out.imm = signed'({instruction[31:25], instruction[11:7]});
+
+                // control signals
+                out.controlSignals.opClass = STORE;
+                out.controlSignals.func = remapFunc(out.controlSignals.opClass, 7'h0, instruction[14:12]);
+            end
+
+            I_LOAD : begin 
+                // registers & immediates
+                out.archRs1 = instruction[19:15];
+                out.archRd = instruction[11:7];
+                out.imm = signed'(instruction[31:20]);
+
+                // control signals
+                out.controlSignals.hasDest = (out.archRd == 0) ? '0 : '1;
+                out.controlSignals.opClass = LOAD;
+                out.controlSignals.func = remapFunc(out.controlSignals.opClass, 7'h0, instruction[14:12]);
+            end
+
+            I_ALUI : begin // alu with imm instructions (addi, etc)
+                // registers & immediates
+                out.archRs1 = instruction[19:15];
+                out.archRd = instruction[11:7];
+                out.imm = instruction[31:20];
+                
+                // control signals
+                out.controlSignals.hasDest = (out.archRd == 0) ? '0 : '1;
+                out.controlSignals.opClass = ALU;
+                out.controlSignals.func = remapFunc(out.controlSignals.opClass, 7'h0, instruction[14:12]);
+                out.controlSignals.useImmForRs2 = '1;
+            end
+
+            I_ALU_MD : begin
+                // registers & immediates
+                out.archRs1 = instruction[19:15];
+                out.archRs2 = instruction[24:20];
+                out.archRd = instruction[11:7];
+
+                // control signals
+                out.controlSignals.hasDest = (out.archRd == 0) ? '0 : '1;
+                if (instruction[31:25] == 7'h0 || instruction[31:25] == 7'h20) begin
+                    out.controlSignals.opClass = ALU;
+                end else if (instruction[31:25] == 7'h1 && instruction[14:12] < 4) begin
+                    out.controlSignals.opClass = MUL;
+                end else if (instruction[31:25] == 7'h1 && instruction[14:12] > 3) begin
+                    out.controlSignals.opClass = DIV;
+                end
+                out.controlSignals.func = remapFunc(out.controlSignals.opClass, 7'h0, instruction[14:12]);
+            end
+
+            default : begin
+                out.controlSignals.opClass = NOP;
             end
         endcase
 
