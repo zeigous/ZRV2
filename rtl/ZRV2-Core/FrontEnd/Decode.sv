@@ -20,7 +20,8 @@ module Decode(
     DecodeOut out
 );
 
-    DecodeFuncOut decodeFuncOut = decode(cacheInput.value, fetchInput.pc);
+    DecodeFuncOut decodeFuncOut;
+    assign decodeFuncOut = decode(cacheInput.value, fetchInput.pc);
 
     always_ff @(posedge clk) begin
         if (clkEn) begin
