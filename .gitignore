@@ -1,0 +1,6 @@
+tmp
+tmp/*
+*.xml
+.project
+.settings/
+.vscode/settings.json
