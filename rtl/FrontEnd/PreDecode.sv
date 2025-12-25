@@ -42,7 +42,7 @@ module PreDecode #(
 
     enum { NORMAL, CURRENT_CROSSING, NEXT_CROSSING, FETCH_STALL } state;
 
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk) stateMachine : begin
         if (rst && clkEn) begin
             bufferPointer <= 0;
             bytesRemaining <= 0;
@@ -61,6 +61,11 @@ module PreDecode #(
                         bytesInBuffer <= 16 - bufferPointer;
                         bytesRemaining <= instructionLength - (16 - bufferPointer);
                         remainingBytes <= fetchBufferInput[127 : bufferPointer * 8];
+                        // insert bubble
+                        out.instruction <= '0;
+                        out.instructionLength <= 3;
+                        out.instructionPc <= fetchBufferPc + bufferPointer;
+
                     end else if (nextInstructionCrosses) begin
                         state <= NEXT_CROSSING;
                         // store bytes in the buffer
@@ -71,6 +76,7 @@ module PreDecode #(
                         out.instruction <= fetchBufferInput[(bufferPointer + instructionLength) * 8 - 1: bufferPointer * 8];
                         out.instructionLength <= instructionLength;
                         out.instructionPc <= fetchBufferPc + bufferPointer;
+                        
                     end else begin
                         bufferPointer <= bufferPointer + instructionLength;
                         // to decode
@@ -80,7 +86,7 @@ module PreDecode #(
                     end
                 end
 
-                
+
 
                 default: state <= NORMAL;
             endcase
@@ -90,7 +96,7 @@ module PreDecode #(
     
     //---------------------------------------------------------[instruction length lut]----------------------------------------------------------//
     logic [2:0] lengthLut [0:7] = '{2, 3, 4, 5, 7, 9, 11, 12};
-    always_comb begin
+    always_comb lengthLookup : begin
         nextInstructionLength = '0;
 
         instructionLength = lengthLut[ fetchBufferInput[(bufferPointer * 8) - 1 +: 3] ]; // get the first 3 bits of the first byte of the instruction for length
