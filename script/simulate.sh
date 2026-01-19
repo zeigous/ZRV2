@@ -1,27 +1,60 @@
-# Requires verilator
-if [ -z "$1" ]
-then
-    echo "simulate.sh needs the name of a toplevel testbench from the rtl directory!"
-else
-    toplevel=$(basename -- "${1%.*}")
-    mypath=$(pwd)
-    tmp="$mypath/../tmp"
-    mkdir -p $tmp
-    rm -rf $tmp/*
-    verilator_version=$(verilator --version)
-    echo ==$verilator_version==
-    { echo -e "#include \"obj_dir/V$toplevel.h\""; cat simulate.cpp; } > $tmp/simulate.cpp
-    cd $tmp/
-    rtl="../rtl"
-    verilator_flags="--exe --build --timing -j 0 --trace --trace-structs -cc"
-    cflags="-CFLAGS -DTARGET_TB=V$toplevel"
-    defines="-DSIM_DEBUG"
-    sv_std="--default-language 1800-2005"
-    warn_options="--assert -Wno-fatal -Werror-USERERROR -Werror-USERFATAL"
-    libdirlist=$(find $rtl/ -not -path */testbench -and -type d -exec bash -c 'echo "-y $1"' bash "{}" \; )
-    toplevelfile="$(find $rtl/ -name $1)"
-    verilator $verilator_flags $cflags $defines $sv_std $warn_options $libdirlist $toplevelfile simulate.cpp
-    echo ==simulation==
-    ./obj_dir/V$toplevel
-    gtkwave -A --rcvar 'fontname_signals Monospace 13' --rcvar 'fontname_waves Monospace 12' sim.vcd
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
+    echo "simulate.sh needs the name of a toplevel testbench module!"
+    exit 1
 fi
+
+top_dir="${PWD##*/}"
+cpu_dir="$(pwd)/cpu"
+
+case "$top_dir" in
+    script)
+        cd ..
+        ;;
+    *)
+        if [ -d "rtl" ]; then
+            :
+        else
+            echo "simulate.sh needs to run from either the base dir or the script dir!"
+            exit 1
+        fi
+        ;;
+esac
+
+tmp="$(pwd)/tmp"
+traces="$(pwd)/traces"
+
+rtl="$(pwd)/rtl"
+
+mkdir -p "$tmp"
+rm -rf "$tmp"/*
+
+mkdir -p "$traces"
+rm -rf "$traces"/*
+
+# find testbench and other files
+testbench_module="$1"
+files_sv=$(find "$rtl" \( -name "*.sv" -o -name "*.v" \))
+
+verilator_version=$(verilator --version)
+printf "\n === %s ===\n\n" "$verilator_version"
+
+# flags for verilator
+verilator_flags="-O3 --trace --timing --binary --top-module $testbench_module -I$rtl"
+warn_options="--assert -Wno-fatal -Werror-USERERROR -Werror-USERFATAL"
+
+# run verilator
+cd "$tmp"
+verilator $verilator_flags $warn_options $files_sv > "$tmp/verilator.log"
+
+# generate trace file
+cd "$traces"
+"$tmp/obj_dir/V$testbench_module"
+
+# run gtkwave
+cd ..
+gtkwave -A --rcvar 'fontname_signals monaspace_xenon 13' --rcvar 'fontname_waves Monospace 12' "$traces/waveform.vcd"
+
+exit 0

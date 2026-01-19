@@ -5,3 +5,5 @@ tmp/*
 .settings/
 .vscode/settings.json
 obj_dir/
+.vscode/
+.vscode/*
