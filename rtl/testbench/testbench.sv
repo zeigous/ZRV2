@@ -13,7 +13,6 @@ module testbench;
     flush_t flush = 0;
     logic stall = 0;
 
-    wire [4:0] pc_inc_val;
 
     // interfaces   
 

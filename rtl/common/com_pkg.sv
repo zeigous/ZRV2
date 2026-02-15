@@ -4,11 +4,30 @@ package com_pkg;
     typedef struct packed {
         logic [31:0] address;
         logic valid;
+        logic redirect;
         logic jump;
         logic taken;
-        logic prediction;
     } flush_t;
 
+    // final instruction package
+    typedef struct packed {
+        inst_class_t inst_class;
+        reg_pack_t rs1;
+        reg_pack_t rs2;
+        reg_pack_t rs3;
+        reg_pack_t rd;
+        inst_func_t func;
+        logic illegal;
+    } instruction_pack_t;
+
+    typedef struct packed {
+        logic [4:0] rs;
+        logic [31:0] val;
+        logic valid;
+        logic predetermined;
+    } reg_pack_t;
+    
+    // decode stuff
     typedef struct packed {
         inst_class_t inst_class;
         decode_reg_t rd;

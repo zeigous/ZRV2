@@ -28,7 +28,17 @@ module Decode2 #(
             out.valid <= in.valid;
             out.predicted_next_adr <= predicted_adr;
             out.pc <= in.pc;
-            out.decoded_instruction <= in.decoded_instruction;
+
+            // decoded instruction mapping
+            out.decoded_instruction.inst_class <= in.decoded_instruction.inst_class;
+            out.decoded_instruction.rd <= in.decoded_instruction.rd;
+            out.decoded_instruction.rs1 <= in.decoded_instruction.rs1;
+            out.decoded_instruction.rs2 <= in.decoded_instruction.rs2;
+            out.decoded_instruction.imm <= in.decoded_instruction.imm;
+            out.decoded_instruction.has_imm <= in.decoded_instruction.has_imm;
+            out.decoded_instruction.uses_pc <= in.decoded_instruction.uses_pc;
+            out.decoded_instruction.func <= in.decoded_instruction.func;
+            out.decoded_instruction.illegal <= ((in.decoded_instruction.inst_class == ILLEGAL) || (in.decoded_instruction.func == IL)) ? '1 : '0;
 
         end else if (flush.valid || rst) begin
             out.valid <= '0;

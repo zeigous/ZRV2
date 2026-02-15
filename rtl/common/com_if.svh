@@ -55,13 +55,29 @@ interface id2_id3_if #( // @suppress "File contains multiple design units"
     );
     reg valid;
     reg [WIDTH - 1 : 0] pc;
-    decode_instruction_t decoded_instruction;
+    decode_instruction_2_t decoded_instruction;
 
     // branch prediction
     reg [ADR_WIDTH - 1 : 0] predicted_next_adr;
 
     modport decode2(output valid, output pc, output decoded_instruction, output predicted_next_adr);
     modport decode3(input valid, input pc, input decoded_instruction, input predicted_next_adr);
+endinterface
+
+// ID3-RNS Interface
+interface id3_rns_if #( // @suppress "File contains multiple design units"
+    parameter WIDTH = 32,
+    parameter ADR_WIDTH = 32
+    );
+    reg valid;
+    reg [WIDTH - 1 : 0] pc;
+    instruction_pack_t instruction;
+
+    // branch prediction
+    reg [ADR_WIDTH - 1 : 0] predicted_next_adr;
+
+    modport decode3(output valid, output pc, output instruction, output predicted_next_adr);
+    modport rename_source(input valid, input pc, input instruction, input predicted_next_adr);
 endinterface
 
 
