@@ -1,7 +1,7 @@
 `include "common/com_if.svh"
 import com_pkg::*;
 
-module fetch #()(
+module Fetch #()(
     input clk,
     input rst,
     input clk_en,
@@ -12,4 +12,4 @@ module fetch #()(
     // flush
 
 );
-endmodule : fetch
+endmodule : Fetch
