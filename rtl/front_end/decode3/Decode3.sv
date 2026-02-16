@@ -10,7 +10,7 @@ module Decode3(
     input flush_t flush,
 
     id2_id3_if.decode3 in,
-    id3_rns_if.decode3 out
+    id3_rn_if.decode3 out
 );
 
     always_ff @(posedge clk) begin
