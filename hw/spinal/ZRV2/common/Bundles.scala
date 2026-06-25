@@ -1,6 +1,6 @@
-package ZRV1.common
+package ZRV2.common
 
-import ZRV1.CoreConfig
+import ZRV2.CoreConfig
 import spinal.core._
 
 import scala.language.postfixOps
@@ -41,6 +41,8 @@ case class ID2ToRR(config: CoreConfig) extends Bundle {
   val nxtPc           = UInt(config.xlen bits)
   val controlSignals  = ControlSignals()
   val func            = Func()
+  val branchFunc      = BranchFunc()
+  val memFunc         = MemFunc()
   val imm             = Bits(config.xlen bits)
   val rs1             = RegIdentifier(config)
   val rs2             = RegIdentifier(config)
@@ -51,7 +53,6 @@ case class ID2ToRR(config: CoreConfig) extends Bundle {
 case class ControlSignals() extends Bundle {
   val aluASel   = AluASel()
   val aluBSel   = AluBSel()
-  val aluModSel = AluModSel()
   val jump      = Bool()
   val branch    = Bool()
   val jmpSel    = JmpSel()
@@ -62,11 +63,12 @@ case class ControlSignals() extends Bundle {
 
 object AluASel    extends SpinalEnum(defaultEncoding=native) { val rs1, pc = newElement() }
 object AluBSel    extends SpinalEnum(defaultEncoding=native) { val rs2, imm = newElement() }
-object AluModSel  extends SpinalEnum(defaultEncoding=native) { val add, funct = newElement() }
 object JmpSel     extends SpinalEnum(defaultEncoding=native) { val alu, ecall = newElement() }
 object MemMode    extends SpinalEnum(defaultEncoding=native) { val read, write, none = newElement() }
 object RegIn      extends SpinalEnum(defaultEncoding=native) { val alu, mem, nxtPc = newElement() }
 object Func       extends SpinalEnum(defaultEncoding=native) { val add, sub, xor, or, and, sll, srl, sra, slt, sltu = newElement()}
+object BranchFunc extends SpinalEnum(defaultEncoding=native) { val equal, less, none1, none2, greaterEqual, lessUnsigned, greaterEqualUnsigned = newElement()}
+object MemFunc    extends SpinalEnum(defaultEncoding=native) { val byte, half, word, none, byteUnsigned, halfUnsigned = newElement()}
 
 case class RegIdentifier(config: CoreConfig) extends Bundle {
   val reg = UInt(5 bits)

@@ -1,4 +1,4 @@
-package ZRV1
+package ZRV2
 
 case class CoreConfig(
     xlen: Int,

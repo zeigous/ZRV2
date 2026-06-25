@@ -1,7 +1,7 @@
-package ZRV1.fetch
+package ZRV2.fetch
 
-import ZRV1.CoreConfig
-import ZRV1.common._
+import ZRV2.CoreConfig
+import ZRV2.common._
 import spinal.core._
 import spinal.lib._
 

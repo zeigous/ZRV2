@@ -1,4 +1,4 @@
-package ZRV1
+package ZRV2
 
 import spinal.core._
 import spinal.core.formal._
