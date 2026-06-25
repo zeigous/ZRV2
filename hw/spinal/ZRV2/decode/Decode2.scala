@@ -18,7 +18,7 @@ case class Decode2(config: CoreConfig) extends Component {
   /* Check if Reg is 0 */
   io.output.payload.rs1.valid := io.input.payload.rs1.valid &&  (io.input.payload.rs1.reg === 0)
   io.output.payload.rs2.valid := io.input.payload.rs2.valid &&  (io.input.payload.rs2.reg === 0)
-  io.output.payload.rd.valid  := io.input.payload.rd.valid &&   (io.input.payload.rd.reg === 0)
+  io.output.payload.rd.valid  := io.input.payload.rd.valid  &&  (io.input.payload.rd.reg === 0)
 
   /* constant stuff */
   io.output.payload.pc    := io.input.payload.pc
@@ -37,22 +37,18 @@ case class Decode2(config: CoreConfig) extends Component {
 
 
   /* Opcode Decode Rom */
-  val decoderTable = Seq(
-    //                    ( aluA,        aluB,      jump,  branch,   jmpSel,       memMode,    regWe,   regIn )
-    B"01100" -> makeCtrl(AluASel.rs1, AluBSel.rs2, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu),    // R-Type
-    B"00100" -> makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu),    // I-Type ALU
-    B"00000" -> makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.read,  True,  RegIn.mem),    // Loads
-    B"01000" -> makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.write, False, RegIn.alu),    // Stores
-    B"11000" -> makeCtrl(AluASel.rs1, AluBSel.rs2, False, True,   JmpSel.alu,  MemMode.none,  False, RegIn.alu),    // Branches
-    B"01101" -> makeCtrl(AluASel.pc,  AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu),    // LUI
-    B"00101" -> makeCtrl(AluASel.pc,  AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu),    // AUIPC
-    B"11011" -> makeCtrl(AluASel.pc,  AluBSel.imm, True,  False,  JmpSel.alu,  MemMode.none,  True,  RegIn.nxtPc),  // JAL
-    B"11011" -> makeCtrl(AluASel.rs1, AluBSel.imm, True,  False,  JmpSel.alu,  MemMode.none,  True,  RegIn.nxtPc)   // JALR
-  )
-
-
-  /* Use the Rom */
-  io.output.payload.controlSignals := inst(6 downto 2).muxListDc(decoderTable)
+  switch (inst(6 downto 2)) {
+    //                                                         ( aluA,        aluB,      jump,  branch,   jmpSel,       memMode,    regWe,   regIn )
+    is(B"01100") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.rs2, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu)   }  // R-Type
+    is(B"00100") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu)   }  // I-Type ALU
+    is(B"00000") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.read,  True,  RegIn.mem)   }  // Loads
+    is(B"01000") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.imm, False, False,  JmpSel.alu,  MemMode.write, False, RegIn.alu)   }  // Stores
+    is(B"11000") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.rs2, False, True,   JmpSel.alu,  MemMode.none,  False, RegIn.alu)   }  // Branches
+    is(B"01101") { io.output.payload.controlSignals := makeCtrl(AluASel.pc,  AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu)   }  // LUI
+    is(B"00101") { io.output.payload.controlSignals := makeCtrl(AluASel.pc,  AluBSel.imm, False, False,  JmpSel.alu,  MemMode.none,  True,  RegIn.alu)   }  // AUIPC
+    is(B"11011") { io.output.payload.controlSignals := makeCtrl(AluASel.pc,  AluBSel.imm, True,  False,  JmpSel.alu,  MemMode.none,  True,  RegIn.nxtPc) }  // JAL
+    is(B"11011") { io.output.payload.controlSignals := makeCtrl(AluASel.rs1, AluBSel.imm, True,  False,  JmpSel.alu,  MemMode.none,  True,  RegIn.nxtPc) }  // JALR
+  }
 
   /* Func3 Decode Rom */
   switch (inst(30) ## inst(14 downto 12) ## inst(6 downto 2)) {

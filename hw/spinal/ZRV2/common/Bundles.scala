@@ -49,6 +49,30 @@ case class ID2ToRR(config: CoreConfig) extends Bundle {
   val rd              = RegIdentifier(config)
 }
 
+case class RRToEX(config: CoreConfig) extends Bundle {
+  val pc              = UInt(config.xlen bits)
+  val nxtPc           = UInt(config.xlen bits)
+  val controlSignals  = ControlSignals()
+  val func            = Func()
+  val branchFunc      = BranchFunc()
+  val memFunc         = MemFunc()
+  val imm             = Bits(config.xlen bits)
+  val rs1             = RegValue(config)
+  val rs2             = RegValue(config)
+  val rd              = RegIdentifier(config)
+}
+
+case class EXToMEM1(config: CoreConfig) extends Bundle {
+  val nxtPc           = UInt(config.xlen bits)
+  val controlSignals  = ControlSignals()
+  val branchFunc      = BranchFunc()
+  val memFunc         = MemFunc()
+  val aluOut          = Bits(config.xlen bits)
+  val rs1             = RegValue(config)
+  val rs2             = RegValue(config)
+  val rd              = RegIdentifier(config)
+}
+
 /* Control Signals */
 case class ControlSignals() extends Bundle {
   val aluASel   = AluASel()
@@ -64,7 +88,7 @@ case class ControlSignals() extends Bundle {
 object AluASel    extends SpinalEnum(defaultEncoding=native) { val rs1, pc = newElement() }
 object AluBSel    extends SpinalEnum(defaultEncoding=native) { val rs2, imm = newElement() }
 object JmpSel     extends SpinalEnum(defaultEncoding=native) { val alu, ecall = newElement() }
-object MemMode    extends SpinalEnum(defaultEncoding=native) { val read, write, none = newElement() }
+object MemMode    extends SpinalEnum(defaultEncoding=native) { val none, read, write = newElement() }
 object RegIn      extends SpinalEnum(defaultEncoding=native) { val alu, mem, nxtPc = newElement() }
 object Func       extends SpinalEnum(defaultEncoding=native) { val add, sub, xor, or, and, sll, srl, sra, slt, sltu = newElement()}
 object BranchFunc extends SpinalEnum(defaultEncoding=native) { val equal, less, none1, none2, greaterEqual, lessUnsigned, greaterEqualUnsigned = newElement()}
@@ -77,6 +101,4 @@ case class RegIdentifier(config: CoreConfig) extends Bundle {
 
 case class RegValue(config: CoreConfig) extends Bundle {
   val value = UInt(config.xlen bits)
-  val reg = UInt(5 bits)
-  val valid = Bool()
 }
