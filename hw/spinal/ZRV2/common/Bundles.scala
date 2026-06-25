@@ -65,10 +65,8 @@ case class RRToEX(config: CoreConfig) extends Bundle {
 case class EXToMEM1(config: CoreConfig) extends Bundle {
   val nxtPc           = UInt(config.xlen bits)
   val controlSignals  = ControlSignals()
-  val branchFunc      = BranchFunc()
   val memFunc         = MemFunc()
-  val aluOut          = Bits(config.xlen bits)
-  val rs1             = RegValue(config)
+  val aluOut          = UInt(config.xlen bits)
   val rs2             = RegValue(config)
   val rd              = RegIdentifier(config)
 }
